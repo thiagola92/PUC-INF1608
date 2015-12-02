@@ -6,7 +6,7 @@
 
 // Se você quiser ver os prints que mostram etapa por etapa de uma certa função, coloque o debug dela como true
 
-#define DEBUG_add_valor false
+#define DEBUG_add_valor true
 #define DEBUG_busca_binaria false
 #define DEBUG_adicao_vetores false
 
@@ -105,10 +105,41 @@ void add_valor(int linha, int coluna, double valor, Matriz* m)
 	// Se a coluna já existir você só vai querer atualizar o elemento dela
 	resposta_da_busca_binaria = busca_binaria(linha, coluna, m);
 	if (resposta_da_busca_binaria != -1) {
+
+		if (valor == 0) {
+
+			if (DEBUG_add_valor) {
+				printf("Tratando para quando um dos elementos se torna 0 \n");
+				printf("#Fim do add valor \n\n");
+			}
+
+			// Esse loop vai passar esse elemento com 0 pro final da coluna para que possamos depois dar realloc
+			for (; resposta_da_busca_binaria+1 < m->i[linha].numero_de_colunas; resposta_da_busca_binaria++) {
+				m->i[linha].j[resposta_da_busca_binaria].numero_da_coluna = m->i[linha].j[resposta_da_busca_binaria+1].numero_da_coluna;
+				m->i[linha].j[resposta_da_busca_binaria].valor = m->i[linha].j[resposta_da_busca_binaria+1].valor;
+			}
+
+			m->i[linha].numero_de_colunas--;
+			m->i[linha].j = (Coluna*)realloc(m->i[linha].j, sizeof(Coluna) * m->i[linha].numero_de_colunas);
+
+			return;
+		}
+
 		m->i[linha].j[resposta_da_busca_binaria].valor = valor;
 
 		if (DEBUG_add_valor) {
 			printf("Voce alterou o valor da linha %d e coluna %d para %f \n", linha, coluna, valor);
+			printf("#Fim do add valor \n\n");
+		}
+
+		return;
+	}
+
+	// Caso seja 0 você não precisa adicionar no vetor, nós sabemos que toda parte da matriz sem numero é zero
+	if (valor == 0) {
+
+		if (DEBUG_add_valor) {
+			printf("Voce tentou adicionar um elemento com zero, isso nao eh necessario \n");
 			printf("#Fim do add valor \n\n");
 		}
 
@@ -356,6 +387,18 @@ void adicao_vetores(Matriz* v1, Matriz* v2, Matriz *v3)
 		printf("#Fim adicao vetores \n\n");
 }
 
+/*
+ * Multiplicação de matriz por vetor
+ * Bota o resultado no segundo vetor passado
+ * m >> matriz que vai ser usada
+ * v1 >> vetor que vai multiplicar a matriz
+ * v3 >> vetor que vai armazenar o resultado
+ */
+void multiplicacao_matriz_vetor(Matriz* m, Matriz* v1, Matriz* v2)
+{
+	double soma;	// Armazena a soma de um dos elementos que vai ficar numa posicao [i][j] do novo vetor
+}
+
 int main (void)
 {
 	Matriz m;				// Matriz que o programa vai interagir
@@ -401,11 +444,14 @@ int main (void)
 
 	add_valor(0, 1, 4, &v2);
 	add_valor(0, 2, 5, &v2);
+	add_valor(0, 2, 0, &v2);
+	add_valor(0, 2, -3, &v2);
 
 	adicao_vetores(&v1, &v2, &v3);
 
 	printf("[1,2,3] + [0,4,5] = \n");
 	printf("[%f,%f,%f] \n", v3.i[0].j[0].valor, v3.i[0].j[1].valor, v3.i[0].j[2].valor);
+	printf("numero de colunas n zero: %d \n", v3.i[0].numero_de_colunas);
 
 	printf("---------------------------------------------------\n");
 

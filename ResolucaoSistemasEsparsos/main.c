@@ -6,9 +6,10 @@
 
 // Se você quiser ver os prints que mostram etapa por etapa de uma certa função, coloque o debug dela como true
 
-#define DEBUG_add_valor true
+#define DEBUG_add_valor false
 #define DEBUG_busca_binaria false
 #define DEBUG_adicao_vetores false
+#define DEBUG_multiplicacao_matriz_vetor true
 
 // Lembrete: linha 1 coluna 1 é M[0][0]
 
@@ -41,8 +42,9 @@ typedef struct matriz
 void cria_linhas(int n, Matriz* m);
 void add_valor(int linha, int coluna, double valor, Matriz* m);
 void preencher_matriz(Matriz* m);
-void adicao_vetores(Matriz* v1, Matriz v2);
+void adicao_vetores(Matriz* v1, Matriz v2, Matriz *v3);
 int busca_binaria(int linha, int coluna, Matriz* m);
+void multiplicacao_matriz_vetor(Matriz* m, Matriz* v1, Matriz* v2);
 
 /***********************************************/
 
@@ -396,7 +398,89 @@ void adicao_vetores(Matriz* v1, Matriz* v2, Matriz *v3)
  */
 void multiplicacao_matriz_vetor(Matriz* m, Matriz* v1, Matriz* v2)
 {
-	double soma;	// Armazena a soma de um dos elementos que vai ficar numa posicao [i][j] do novo vetor
+	int contadorLinha;	// Contador da linha
+	int contadorColuna;	// Contador da coluna
+	int contador;		// Contador que vai de 0 até numero de linha/coluna para pegar os elementos
+
+	double soma;		// Armazena a soma de um dos elementos que vai ficar numa posicao [i][j] do novo vetor
+
+	int pos_da_busca_1;	// Guarda a posicao da coluna que vai retornar da busca binaria
+	int pos_da_busca_2;	// Guarda a posicao da coluna que vai retornar da busca binaria (para a segunda matriz)
+	
+	if (DEBUG_multiplicacao_matriz_vetor) {
+		printf("#Multiplicacao matriz por vetor \n");
+	}
+
+	// Vai linha por linha e coluna por coluna para fazer o calculo de matriz por vetor
+	for (contadorLinha = 0; contadorLinha < m->numero_de_linhas; contadorLinha++) {
+
+		if (DEBUG_multiplicacao_matriz_vetor)
+			printf("-----Linha: %d \n", contadorLinha);
+
+		for (contadorColuna = 0; contadorColuna < m->numero_de_linhas; contadorColuna++) {
+
+			if (DEBUG_multiplicacao_matriz_vetor)
+				printf("-----Coluna: %d \n", contadorColuna);
+
+			soma = 0;
+
+			for (contador = 0; contador < m->numero_de_linhas; contador++) {
+
+				if (DEBUG_multiplicacao_matriz_vetor) {
+					printf("-Andou uma coluna do primeiro \n");
+					printf("-Andou uma linha do segundo \n");
+					printf("-Para %d \n", contador);
+					printf("-Estado do somatorio: %f \n", soma);
+				}
+
+				pos_da_busca_1 = busca_binaria(contadorLinha, contador, m);
+
+				// Caso seja zero o valor do elemento, a multiplicação da zero
+				if (pos_da_busca_1 == -1) {
+					add_valor(contadorLinha, contadorColuna, soma, v2);
+
+					if (DEBUG_multiplicacao_matriz_vetor) {
+						printf("-Um dos elementos eh 0 (1) \n");
+						printf("-Somatorio %f \n", soma);
+					}
+
+					continue;
+				}
+
+				pos_da_busca_2 = busca_binaria(contador, contadorColuna, v1);
+
+				// Caso seja zero o valor do elemento, a multiplicação da zero
+				if (pos_da_busca_2 == -1) {
+					add_valor(contadorLinha, contadorColuna, soma, v2);
+
+					if (DEBUG_multiplicacao_matriz_vetor) {
+						printf("-Um dos elementos eh 0 (2) \n");
+						printf("-Somatorio %f \n", soma);
+					}
+
+					continue;
+				}
+
+
+				// Caso ambos não sejam zero, multiplicar e somar ao somatorio para botar naquela linha e coluna
+				soma = soma + (m->i[contadorLinha].j[pos_da_busca_1].valor * v1->i[contador].j[pos_da_busca_2].valor);
+				add_valor(contadorLinha, contadorColuna, soma,v2);
+
+				if (DEBUG_multiplicacao_matriz_vetor) {
+					printf("%f \n", m->i[contadorLinha].j[pos_da_busca_1].valor);
+					printf("%f \n", v1->i[contador].j[pos_da_busca_2].valor);
+					printf("-Nenhum dos elementos eh 0 \n");
+					printf("-Somatorio %f \n", soma);
+				}
+			}
+
+		}
+	}
+
+	if (DEBUG_multiplicacao_matriz_vetor) {
+		printf("#Fim da multiplicacao matriz por vetor \n");
+	}
+
 }
 
 int main (void)
@@ -438,10 +522,12 @@ int main (void)
 	cria_linhas(3, &v2);
 	cria_linhas(3, &v3);
 
+	printf("Um vetor vai ser [ 1 2 3 ] \n");
 	add_valor(0, 0, 1, &v1);
 	add_valor(0, 1, 2, &v1);
 	add_valor(0, 2, 3, &v1);
 
+	printf("O outro vai ser [ 0 4 -3 ] \n");
 	add_valor(0, 1, 4, &v2);
 	add_valor(0, 2, 5, &v2);
 	add_valor(0, 2, 0, &v2);
@@ -449,11 +535,33 @@ int main (void)
 
 	adicao_vetores(&v1, &v2, &v3);
 
-	printf("[1,2,3] + [0,4,5] = \n");
+	printf("Resultado = \n");
 	printf("[%f,%f,%f] \n", v3.i[0].j[0].valor, v3.i[0].j[1].valor, v3.i[0].j[2].valor);
 	printf("numero de colunas n zero: %d \n", v3.i[0].numero_de_colunas);
 
 	printf("---------------------------------------------------\n");
+	printf("\t Testando a multiplicação de matriz por vetor. \n");
+
+	printf("Uma matriz com \n [ 1 2 3 ] \n [ 4 5 6 ] \n [ 7 8 9 ] \n");
+	add_valor(1, 0, 4, &v1);
+	add_valor(1, 1, 5, &v1);
+	add_valor(1, 2, 6, &v1);
+	add_valor(2, 0, 7, &v1);
+	add_valor(2, 1, 8, &v1);
+	add_valor(2, 2, 9, &v1);
+
+	printf("Um vetor com [ 2 2 0] \n");
+	add_valor(0, 0, 2, &v2);
+	add_valor(0, 1, 2, &v2);
+	add_valor(0, 2, 0, &v2);
+
+	multiplicacao_matriz_vetor(&v1, &v2, &v3);
+
+	printf("Resultado = \n");
+	printf(" [ %f %f %f] \n", v3.i[0].j[0].valor, v3.i[0].j[1].valor, v3.i[0].j[2].valor);
+
+	printf("Ordem faz diferença no resultado = \n");
+	printf(" [ %f %f %f] \n [ %f %f %f] \n [ %f %f %f] \n", v3.i[0].j[0].valor, v3.i[0].j[1].valor, v3.i[0].j[2].valor, v3.i[1].j[0].valor, v3.i[1].j[1].valor, v3.i[1].j[2].valor, v3.i[2].j[0].valor, v3.i[2].j[1].valor, v3.i[2].j[2].valor);
 
 	return 0;
 }

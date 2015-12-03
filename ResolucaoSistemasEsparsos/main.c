@@ -9,7 +9,7 @@
 #define DEBUG_add_valor false
 #define DEBUG_busca_binaria false
 #define DEBUG_adicao_vetores false
-#define DEBUG_multiplicacao_matriz_vetor true
+#define DEBUG_multiplicacao_matriz_vetor false
 
 // Lembrete: linha 1 coluna 1 é M[0][0]
 
@@ -245,7 +245,7 @@ void preencher_matriz(Matriz* m)
  * linha >> linha na qual vai buscar e aplicar busca binaria
  * coluna >> coluna que vai buscar
  * m >> matriz onde vai ocorrer a busca
- * Retorna onde esta aquela coluna dentro do vetor, ou seja, retorna o indice , ex: m->i[linha]->j[INDICE QUE RETORNA]
+ * Return >> Retorna onde esta aquela coluna dentro do vetor, ou seja, retorna o indice , ex: m->i[linha]->j[INDICE QUE RETORNA]
 */
 int busca_binaria(int linha, int coluna, Matriz* m)
 {
@@ -395,6 +395,9 @@ void adicao_vetores(Matriz* v1, Matriz* v2, Matriz *v3)
  * m >> matriz que vai ser usada
  * v1 >> vetor que vai multiplicar a matriz
  * v3 >> vetor que vai armazenar o resultado
+ * OBS: Na verdade multiplica matriz por matriz mas quando a matriz só tem uma linha, não é nada mais que um vetor.
+ * /\ Entenda isso como um "Você pode usar para multiplicar matriz por matriz tranquilamente"
+ * OBS2: Ordem faz diferença no resultado
  */
 void multiplicacao_matriz_vetor(Matriz* m, Matriz* v1, Matriz* v2)
 {
@@ -407,9 +410,8 @@ void multiplicacao_matriz_vetor(Matriz* m, Matriz* v1, Matriz* v2)
 	int pos_da_busca_1;	// Guarda a posicao da coluna que vai retornar da busca binaria
 	int pos_da_busca_2;	// Guarda a posicao da coluna que vai retornar da busca binaria (para a segunda matriz)
 	
-	if (DEBUG_multiplicacao_matriz_vetor) {
+	if (DEBUG_multiplicacao_matriz_vetor)
 		printf("#Multiplicacao matriz por vetor \n");
-	}
 
 	// Vai linha por linha e coluna por coluna para fazer o calculo de matriz por vetor
 	for (contadorLinha = 0; contadorLinha < m->numero_de_linhas; contadorLinha++) {
@@ -483,6 +485,41 @@ void multiplicacao_matriz_vetor(Matriz* m, Matriz* v1, Matriz* v2)
 
 }
 
+/*
+ * Multiplica um vetor por um escalar
+ * x >> O valor pelo qual você vai multiplica tudo no vetor
+ * v1 >> Vetor que vai ser usado como base para multiplicar
+ * v2 >> Resultado vai ser botado nesse vetor
+ * OBS: É nada mais que multiplicar um escalar por uma matriz.
+ * /\ Sim, você pode usar para fazer escalar vezes matriz
+*/
+void multiplicacao_escalar_vetor(double x, Matriz* v1, Matriz* v2)
+{
+	int contadorLinha;
+	int contadorColuna;
+
+	int resposta_busca;
+
+	double multplicacao_temp;
+
+	for (contadorLinha = 0; contadorLinha < v1->numero_de_linhas; contadorLinha++) {
+
+		for (contadorColuna = 0; contadorColuna < v1->numero_de_linhas; contadorColuna++) {
+
+			// Resposta da busca binaria, se for 0 retorna -1, se não a posicao do vetor
+			resposta_busca = busca_binaria(contadorLinha, contadorColuna, v1);
+
+			// Caso não seja zero, salvar no segundo vetor
+			if (resposta_busca != -1) {
+				multplicacao_temp = v1->i[contadorLinha].j[resposta_busca].valor * x;
+				add_valor(contadorLinha, contadorColuna, multplicacao_temp, v2);
+			}
+
+		}
+
+	}
+}
+
 int main (void)
 {
 	Matriz m;				// Matriz que o programa vai interagir
@@ -540,7 +577,7 @@ int main (void)
 	printf("numero de colunas n zero: %d \n", v3.i[0].numero_de_colunas);
 
 	printf("---------------------------------------------------\n");
-	printf("\t Testando a multiplicação de matriz por vetor. \n");
+	printf("\t Testando a multiplicacao de matriz por vetor. \n");
 
 	printf("Uma matriz com \n [ 1 2 3 ] \n [ 4 5 6 ] \n [ 7 8 9 ] \n");
 	add_valor(1, 0, 4, &v1);
@@ -562,6 +599,37 @@ int main (void)
 
 	printf("Ordem faz diferença no resultado = \n");
 	printf(" [ %f %f %f] \n [ %f %f %f] \n [ %f %f %f] \n", v3.i[0].j[0].valor, v3.i[0].j[1].valor, v3.i[0].j[2].valor, v3.i[1].j[0].valor, v3.i[1].j[1].valor, v3.i[1].j[2].valor, v3.i[2].j[0].valor, v3.i[2].j[1].valor, v3.i[2].j[2].valor);
+
+	printf("---------------------------------------------------\n");
+	printf("\t Testando a multiplicacao de escalar por vetor. \n");
+
+	printf("Vetor com [ 1 2 0 ] \n");
+	add_valor(0, 0, 1, &v1);
+	add_valor(0, 1, 2, &v1);
+	add_valor(0, 2, 0, &v1);
+	add_valor(1, 0, 0, &v1);
+	add_valor(1, 1, 0, &v1);
+	add_valor(1, 2, 0, &v1);
+	add_valor(2, 0, 0, &v1);
+	add_valor(2, 1, 0, &v1);
+	add_valor(2, 2, 0, &v1);
+
+	printf("Escalar = 3 \n");
+
+	add_valor(0, 0, 0, &v2);
+	add_valor(0, 1, 0, &v2);
+	add_valor(0, 2, 0, &v2);
+	add_valor(1, 0, 0, &v2);
+	add_valor(1, 1, 0, &v2);
+	add_valor(1, 2, 0, &v2);
+	add_valor(2, 0, 0, &v2);
+	add_valor(2, 1, 0, &v2);
+	add_valor(2, 2, 0, &v2);
+
+	multiplicacao_escalar_vetor(3, &v1, &v2);
+
+	printf("Resultado = \n");
+	printf(" [ %f %f %f ] \n", v2.i[0].j[0].valor, v2.i[0].j[1].valor, v2.i[0].j[2].valor);
 
 	return 0;
 }

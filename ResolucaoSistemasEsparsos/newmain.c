@@ -144,7 +144,7 @@ void preecnher_matriz(Matriz* m) {
 	int contador = 0;
 
 	for (contador = 0; contador < m->numero_de_linhas; contador++) {
-		add_valor(contador, contador, contador, m);
+		add_valor(contador, contador, contador+1, m);
 		add_valor(contador, contador + 1, 0.5, m);
 		add_valor(contador, contador + 2, 0.5, m);
 		add_valor(contador + 1, contador, 0.5, m);
@@ -160,7 +160,7 @@ void copia(Matriz* m, Matriz* m2) {
 
 	for (contador = 0; contador < m->numero_de_linhas; contador++)
 		for (contador2 = 0; contador2 < m->i[contador].numero_de_colunas; contador2++)
-			add_valor(contador, m->i[contador].j[contador].numero_da_coluna, m->i[contador].j[contador].valor, m2);
+			add_valor(contador, m->i[contador].j[contador2].numero_da_coluna, m->i[contador].j[contador2].valor, m2);
 
 }
 
@@ -193,8 +193,8 @@ void adicao_vetores(Matriz* v1, Matriz* v2, Matriz* v3) {
 		posicao = busca_binaria(0, v2->i[0].j[contador].numero_da_coluna, v3);
 		if (posicao == -1)
 			add_valor(0, v2->i[0].j[contador].numero_da_coluna, v2->i[0].j[contador].valor, v3);
-		if (contador != -1)
-			add_valor(0, v2->i[0].j[contador].numero_da_coluna, v1->i[0].j[contador].valor + v2->i[0].j[contador].valor, v3);
+		else
+			add_valor(0, v2->i[0].j[contador].numero_da_coluna, v3->i[0].j[posicao].valor + v2->i[0].j[contador].valor, v3);
 	}
 }
 
@@ -208,12 +208,16 @@ void multiplicacao_matriz_vetor(Matriz* m, Matriz* v1, Matriz* v2) {
 	int pos_da_busca_1;
 	int pos_da_busca_2;
 
-	cria_matriz(m->numero_de_linhas, v2);
+	Matriz temp;
 
+	cria_matriz(m->numero_de_linhas, v2);
+	
 	for (contadorLinha = 0; contadorLinha < v1->numero_de_linhas; contadorLinha++) {
-		for (contadorColuna = 0; contadorColuna < v1->i[contadorLinha].numero_de_colunas; contadorColuna)
+		for (contadorColuna = 0; contadorColuna < v1->i[contadorLinha].numero_de_colunas; contadorColuna++)
 			add_valor(v1->i[contadorLinha].j[contadorColuna].numero_da_coluna, contadorLinha, v1->i[contadorLinha].j[contadorColuna].valor, v2);
 	}
+
+	copia(v2, &temp);
 
 	for (contadorLinha = 0; contadorLinha < m->numero_de_linhas; contadorLinha++) {
 		
@@ -228,18 +232,27 @@ void multiplicacao_matriz_vetor(Matriz* m, Matriz* v1, Matriz* v2) {
 					continue;
 				}
 
-				pos_da_busca_2 = busca_binaria(contador, contadorColuna, v1);
+				pos_da_busca_2 = busca_binaria(contador, contadorColuna, &temp);
 
 				if (pos_da_busca_2 == -1) {
 					add_valor(contadorLinha, contadorColuna, soma, v2);
 					continue;
 				}
 
-				soma = soma + (m->i[contadorLinha].j[pos_da_busca_1].valor * v1->i[contador].j[pos_da_busca_2].valor);
+				soma = soma + (m->i[contadorLinha].j[pos_da_busca_1].valor * temp.i[contador].j[pos_da_busca_2].valor);
 				add_valor(contadorLinha, contadorColuna, soma, v2);
 			}
 		}
 	}
+
+	cria_matriz(v2->numero_de_linhas, &temp);
+
+	for (contadorLinha = 0; contadorLinha < v2->numero_de_linhas; contadorLinha++) {
+		for (contadorColuna = 0; contadorColuna < v2->i[contadorLinha].numero_de_colunas; contadorColuna++)
+			add_valor(v2->i[contadorLinha].j[contadorColuna].numero_da_coluna, contadorLinha, v2->i[contadorLinha].j[contadorColuna].valor, &temp);
+	}
+
+	copia(&temp, v2);
 }
 
 void multiplicacao_escalar_vetor(double x, Matriz* v1, Matriz* v2) {
@@ -255,20 +268,96 @@ void multiplicacao_escalar_vetor(double x, Matriz* v1, Matriz* v2) {
 			resposta_busca = busca_binaria(contadorLinha, contadorColuna, v1);
 
 			if (resposta_busca != -1)
-				add_valor(contadorLinha, contadorColuna, v1->i[contadorLinha].j[resposta_busca].valor, v2);
+				add_valor(contadorLinha, contadorColuna, v1->i[contadorLinha].j[resposta_busca].valor * x, v2);
 		}
 	}
 }
 
-double multiplicacao_vetor_vetor(Matriz* v1, Matriz* v2, Matriz* v3) {
+double multiplicacao_vetor_vetor(Matriz* v1, Matriz* v2) {
 
-	multiplicacao_matriz_vetor(v1, v2, v3);
+	Matriz v3;
 
-	if (v3->i[0].numero_de_colunas != 0)
-		return v3->i[0].j[0].valor;
+	multiplicacao_matriz_vetor(v1, v2, &v3);
+
+	if (v3.i[0].numero_de_colunas != 0)
+		return v3.i[0].j[0].valor;
 	return 0;
 }
 
+void ConjugateGradient(int n, Matriz* A, Matriz* b, Matriz* x, double tol) {
+
+	int iteracoes = 0;
+
+	double alfa, beta, alfaNum, alfaDen, betaNum;
+
+	Matriz Ax;
+	Matriz menosAx;
+	Matriz r;
+	Matriz d;
+	Matriz Ad;
+	Matriz alfad;
+	Matriz alfaAd;
+	Matriz x1;
+	Matriz menosalfaAd;
+	Matriz r1;
+	Matriz betad;
+	Matriz d1;
+
+	multiplicacao_matriz_vetor(A, x, &Ax);
+
+	// d = r = b - Ax
+	multiplicacao_escalar_vetor(-1, &Ax, &menosAx);
+	adicao_vetores(b, &menosAx, &r);
+	copia(&r, &d);
+
+	for (iteracoes = 1; iteracoes < n; iteracoes++) {
+
+		// Se todos os numeros tiverem dentro da tolerancia
+		for (int i = 0; i < r.i[0].numero_de_colunas; i++) {
+			if (r.i[0].j[i].valor > tol) {
+				printf("%f \n", r.i[0].j[i].valor);
+				break;
+			}
+
+			if (i + 1 == r.i[0].numero_de_colunas) {
+				printf("Gradiente Conjugado para uma matriz de tamanho %d, iteracoes: %d\n", n, iteracoes);
+				return;
+			}
+		}
+
+
+		// alfa
+		alfaNum = multiplicacao_vetor_vetor(&r, &r);
+		multiplicacao_matriz_vetor(A, &d, &Ad);
+		alfaDen = multiplicacao_vetor_vetor(&d, &Ad);
+		alfa = alfaNum / alfaDen;
+
+		// x k+1
+		multiplicacao_escalar_vetor(alfa, &d, &alfad);
+		adicao_vetores(x, &alfad, &x1);
+
+		//r k+1
+		multiplicacao_escalar_vetor(alfa, &Ad, &alfaAd);
+		multiplicacao_escalar_vetor(-1, &alfaAd, &menosalfaAd);
+		adicao_vetores(&r, &menosalfaAd, &r1);
+
+		// beta
+		betaNum = multiplicacao_vetor_vetor(&r1, &r1);
+		beta = betaNum / alfaNum;
+
+		// d k+1
+		multiplicacao_escalar_vetor(beta, &d, &betad);
+		adicao_vetores(&r1, &betad, &d1);
+
+		copia(&x1, x);
+		copia(&r1, &r);
+		copia(&d1, &d);
+	}
+
+	printf("Gradiente Conjugado para uma matriz de tamanho %d, iteracoes: %d\n", n, iteracoes);
+}
+
+/*
 int main(void) {
 	Matriz m1;
 	Matriz v1;
@@ -276,32 +365,62 @@ int main(void) {
 
 	cria_matriz(3, &m1);
 	cria_matriz(3, &v1);
+	cria_matriz(3, &v2);
 
 	add_valor(0, 0, 1, &m1);
-	add_valor(0, 1, 2, &m1);
-	add_valor(0, 2, 3, &m1);
-	add_valor(1, 0, 1, &m1);
+	add_valor(0, 1, -1, &m1);
+	add_valor(0, 2, 0, &m1);
+	add_valor(1, 0, -1, &m1);
 	add_valor(1, 1, 2, &m1);
-	add_valor(1, 2, 3, &m1);
-	add_valor(2, 0, 1, &m1);
-	add_valor(2, 1, 2, &m1);
-	add_valor(2, 2, 3, &m1);
+	add_valor(1, 2, 1, &m1);
+	add_valor(2, 0, 0, &m1);
+	add_valor(2, 1, 1, &m1);
+	add_valor(2, 2, 2, &m1);
 
-	print(&m1);
-	printf("-\n");
-
-	add_valor(0, 0, 3, &v1);
+	add_valor(0, 0, 0, &v1);
 	add_valor(0, 1, 2, &v1);
-	add_valor(0, 2, 1, &v1);
+	add_valor(0, 2, 3, &v1);
 
-	print(&v1);
+	ConjugateGradient(m1.numero_de_linhas, &m1, &v1, &v2);
+
 	printf("-\n");
-
-	adicao_vetores(&m1, &v1, &v2);
-
 	print(&v2);
-	printf("-\n");
 
+
+	return;
+}*/
+
+int GC(void) {
+	Matriz m1;
+	Matriz v1;
+	Matriz v2;
+
+	int tamanho=0;
+	printf("Diga o tamanho da matriz: ");
+	scanf("%d", &tamanho);
+
+	cria_matriz(tamanho, &m1);
+	cria_matriz(tamanho, &v1);
+	cria_matriz(tamanho, &v2);
+
+	preecnher_matriz(&m1);
+
+	for (int i = 0; i < tamanho; i++)
+		add_valor(0, i, 1, &v2);
+
+	multiplicacao_matriz_vetor(&m1, &v2, &v1);
+
+	for (int i = 0; i < tamanho; i++)
+		add_valor(0, i, 0, &v2);
+
+	// numero de linha, A, b, x
+	ConjugateGradient(m1.numero_de_linhas, &m1, &v1, &v2, 0.0001);
+
+	return;
+}
+
+int main(void) {
+	GC();
 
 	return;
 }

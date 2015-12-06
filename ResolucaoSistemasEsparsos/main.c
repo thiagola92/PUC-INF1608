@@ -695,13 +695,14 @@ void filtro(Matriz* x) {
 	}
 }
 
+/*
 int main (void) {
 	Matriz m;				// Matriz que o programa vai interagir
 	Matriz v1;				// Vetor 1
 	Matriz v2;				// Vetor 2
 	Matriz v3;				// Vetor 3
 
-	/************************* FIM DE VARIAVEIS ******************************/
+	/////////////////////////// FIM DE VARIAVEIS /////////////////////////////////
 
 	
 	printf("---------------------------------------------------\n");
@@ -720,9 +721,8 @@ int main (void) {
 
 	printf("Terminou de preencher a matriz \n");
 
-	/***********************************TESTES*****************************************/
+	////////////////////////////////////TESTES//////////////////////////////////////////
 
-	/*
 	printf("---------------------------------------------------\n");
 	printf("\t Testando busca binaria em elementos aleatorios. \n");
 	printf("Se retorna -1 eh porque nao encontrou. \n\n");
@@ -915,7 +915,7 @@ int main (void) {
 
 	printf("Resultado = %f \n", multiplicacao_vetor_vetor(&v1, &v2));
 
-	/********************************FIM DOS TESTES*************************/	
+	/////////////////////////////////FIM DOS TESTES//////////////////////////	
 	printf("---------------------------------------------------\n");
 	printf("\t Testando gradiente conjugado \n");
 
@@ -950,7 +950,7 @@ int main (void) {
 
 	return 0;
 }
-
+*/
 
 void ConjugateGradient(int n, Matriz* A, Matriz* b, Matriz* x)
 {

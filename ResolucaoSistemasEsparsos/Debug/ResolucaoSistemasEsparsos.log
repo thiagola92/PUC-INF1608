@@ -1,12 +1,10 @@
-﻿Build started 12/5/2015 10:31:36 PM.
+﻿Build started 12/6/2015 4:43:50 AM.
      1>Project "C:\Users\thiagola92\Documents\GitHub\ResolucaoSistemasEsparsos\ResolucaoSistemasEsparsos\ResolucaoSistemasEsparsos.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _CRT_SECURE_NO_WARNINGS /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"Debug\\" /Fd"Debug\vc140.pdb" /Gd /TC /analyze- /errorReport:prompt main.c
-         main.c
-     1>c:\users\thiagola92\documents\github\resolucaosistemasesparsos\resolucaosistemasesparsos\main.c(358): warning C4028: formal parameter 2 different from declaration
-     1>c:\users\thiagola92\documents\github\resolucaosistemasesparsos\resolucaosistemasesparsos\main.c(676): warning C4477: 'printf' : format string '%f' requires an argument of type 'double', but variadic argument 1 has type 'int'
+         C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _CRT_SECURE_NO_WARNINGS /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"Debug\\" /Fd"Debug\vc140.pdb" /Gd /TC /analyze- /errorReport:prompt newmain.c
+         newmain.c
        Link:
-         C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\thiagola92\Documents\GitHub\ResolucaoSistemasEsparsos\Debug\ResolucaoSistemasEsparsos.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /Debug /PDB:"C:\Users\thiagola92\Documents\GitHub\ResolucaoSistemasEsparsos\Debug\ResolucaoSistemasEsparsos.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\thiagola92\Documents\GitHub\ResolucaoSistemasEsparsos\Debug\ResolucaoSistemasEsparsos.lib" /MACHINE:X86 Debug\main.obj
+         C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\thiagola92\Documents\GitHub\ResolucaoSistemasEsparsos\Debug\ResolucaoSistemasEsparsos.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /Debug /PDB:"C:\Users\thiagola92\Documents\GitHub\ResolucaoSistemasEsparsos\Debug\ResolucaoSistemasEsparsos.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\thiagola92\Documents\GitHub\ResolucaoSistemasEsparsos\Debug\ResolucaoSistemasEsparsos.lib" /MACHINE:X86 Debug\newmain.obj
          ResolucaoSistemasEsparsos.vcxproj -> C:\Users\thiagola92\Documents\GitHub\ResolucaoSistemasEsparsos\Debug\ResolucaoSistemasEsparsos.exe
      1>Done Building Project "C:\Users\thiagola92\Documents\GitHub\ResolucaoSistemasEsparsos\ResolucaoSistemasEsparsos\ResolucaoSistemasEsparsos.vcxproj" (Build target(s)).
 

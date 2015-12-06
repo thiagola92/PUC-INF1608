@@ -10,6 +10,7 @@
 #define DEBUG_busca_binaria false
 #define DEBUG_adicao_vetores false
 #define DEBUG_multiplicacao_matriz_vetor false
+#define DEBUG_copia false
 
 // Lembrete: linha 1 coluna 1 é M[0][0]
 
@@ -45,6 +46,16 @@ void preencher_matriz(Matriz* m);
 void adicao_vetores(Matriz* v1, Matriz v2, Matriz *v3);
 int busca_binaria(int linha, int coluna, Matriz* m);
 void multiplicacao_matriz_vetor(Matriz* m, Matriz* v1, Matriz* v2);
+void multiplicacao_escalar_vetor(double x, Matriz* v1, Matriz* v2);
+double multiplicacao_vetor_vetor(Matriz* v1, Matriz* v2);
+void copia(Matriz* a, Matriz* b);
+void transposta(Matriz* a, Matriz* b);
+void print(Matriz* x);
+
+
+void ConjugateGradient(int n, Matriz* A, Matriz* b, Matriz* x);
+
+
 
 /***********************************************/
 
@@ -390,6 +401,60 @@ void adicao_vetores(Matriz* v1, Matriz* v2, Matriz *v3)
 }
 
 /*
+* Subtracao de vetores trata duas matrizes como se fossem um vetor.
+* Bota a subtracao deles em outro terceiro vetor passado
+* v1 >> primeiro vetor
+* v2 >> segundo vetor
+* v3 >> vetor com o resultado da subtracao de ambos
+*/
+void subtrai_vetores(Matriz* v1, Matriz* v2, Matriz *v3)
+{
+	int contador;
+	int posicao;
+
+	if (DEBUG_adicao_vetores)
+		printf("#Adicao vetores \n");
+
+	// Criando o vetor novo que vai ser a soma dos dois
+	cria_linhas(v1->numero_de_linhas, v3);
+
+	if (DEBUG_adicao_vetores)
+		printf("copiar %d elementos \n", v1->i[0].numero_de_colunas);
+
+	// Copia o primeiro vetor
+	for (contador = 0; contador != v1->i[0].numero_de_colunas; contador++)
+		add_valor(0, v1->i[0].j[contador].numero_da_coluna, v1->i[0].j[contador].valor, v3);
+
+	if (DEBUG_adicao_vetores)
+		printf("somar %d elementos \n", v2->i[0].numero_de_colunas);
+
+	// Agora se a coluna existir somar se não, adicionar
+	for (contador = 0; contador != v2->i[0].numero_de_colunas; contador++) {
+
+		posicao = busca_binaria(0, v2->i[0].j[contador].numero_da_coluna, v3);
+
+		if (posicao == -1) {
+
+			add_valor(0, v2->i[0].j[contador].numero_da_coluna, -(v2->i[0].j[contador].valor), v3);
+
+			if (DEBUG_adicao_vetores)
+				printf("0 + %f = %f \n", v2->i[0].j[contador].valor, v3->i[0].j[contador].valor);
+
+		}
+		else {
+			add_valor(0, v2->i[0].j[contador].numero_da_coluna, v1->i[0].j[posicao].valor - v2->i[0].j[contador].valor, v3);
+
+			if (DEBUG_adicao_vetores)
+				printf("%f + %f = %f \n", v1->i[0].j[posicao].valor, v2->i[0].j[contador].valor, v3->i[0].j[contador].valor);
+
+		}
+	}
+
+	if (DEBUG_adicao_vetores)
+		printf("#Fim adicao vetores \n\n");
+}
+
+/*
  * Multiplicação de matriz por vetor
  * Bota o resultado no segundo vetor passado
  * m >> matriz que vai ser usada
@@ -520,8 +585,117 @@ void multiplicacao_escalar_vetor(double x, Matriz* v1, Matriz* v2)
 	}
 }
 
-int main (void)
-{
+/*
+ * Multiplicação de vetor por outro vetor que resulta em escalar
+ * v1 >> primeiro vetor
+ * v2 >> segundo vetor
+ * Retorna >> O escalar
+ */
+double multiplicacao_vetor_vetor(Matriz* v1, Matriz* v2) {
+
+	Matriz v2T;
+	Matriz v3;
+
+	cria_linhas(v2->numero_de_linhas, &v2T);
+	cria_linhas(v2->numero_de_linhas, &v3);
+
+
+	transposta(v2, &v2T);
+
+	multiplicacao_matriz_vetor(v1, &v2T, &v3);
+
+	if (v3.i[0].numero_de_colunas != 0) 
+		return v3.i[0].j[0].valor;
+	else
+		return 0;
+
+}
+
+/*
+ * Copia uma matriz em outra
+ * a >> matriz a qual vai ter os elementos copiados
+ * b >> matriz que vai receber a copia
+*/
+void copia(Matriz* a, Matriz* b) {
+
+	int i, j;		// Contadores
+
+	if (a->numero_de_linhas != b->numero_de_linhas) {
+		printf("!!!Erro as matrizes/vetores não são do mesmo tamanho");
+		return;
+	}
+
+	for (i = 0; i < a->numero_de_linhas; i++) {
+
+
+		for (j = 0; j < a->i[i].numero_de_colunas; j++) {
+
+			if (DEBUG_copia) {
+				printf("-Copiando i[%d] j[%d] \n", i, j);
+				printf("-Numero da coluna: %d \n", a->i[i].j[j].numero_da_coluna);
+				printf("-Valor: %f \n", a->i[i].j[j].valor);
+			}
+
+			add_valor(i, a->i[i].j[j].numero_da_coluna, a->i[i].j[j].valor, b);
+		}
+
+	}
+
+}
+
+void transposta(Matriz* a, Matriz* b) {
+
+	int i, j;
+
+	for (i = 0; i < a->numero_de_linhas; i++) {
+
+		for (j = 0; j < a->i[i].numero_de_colunas; j++) {
+			add_valor(a->i[i].j[j].numero_da_coluna, i, a->i[i].j[j].valor, b);
+		}
+
+	}
+
+}
+
+/*
+ *Printa a matriz
+*/
+void print(Matriz* x) {
+
+	int i, j;
+
+	for (i = 0; i < x->numero_de_linhas; i++) {
+
+		if (x->i[i].numero_de_colunas != 0) {
+
+			printf("[ ");
+
+			for (j = 0; j < x->numero_de_linhas; j++) {
+
+				if (busca_binaria(i, j, x) == -1) {
+					printf("%f ", 0);
+				}
+				else {
+					printf("%f ", x->i[i].j[busca_binaria(i, j, x)].valor);
+				}
+
+			}
+
+			printf("] \n");
+		}
+
+	}
+
+}
+
+void filtro(Matriz* x) {
+	int i;
+	for (i = 1; i < x->numero_de_linhas; i++) {
+		x->i[i].numero_de_colunas = 0;
+	}
+}
+
+int main (void) {
 	Matriz m;				// Matriz que o programa vai interagir
 	Matriz v1;				// Vetor 1
 	Matriz v2;				// Vetor 2
@@ -529,6 +703,7 @@ int main (void)
 
 	/************************* FIM DE VARIAVEIS ******************************/
 
+	
 	printf("---------------------------------------------------\n");
 	printf("\t Comecando a execucao do programa. \n");
 	printf("Diga o tamanho da matriz quadrada: \n");
@@ -545,6 +720,9 @@ int main (void)
 
 	printf("Terminou de preencher a matriz \n");
 
+	/***********************************TESTES*****************************************/
+
+	/*
 	printf("---------------------------------------------------\n");
 	printf("\t Testando busca binaria em elementos aleatorios. \n");
 	printf("Se retorna -1 eh porque nao encontrou. \n\n");
@@ -580,6 +758,9 @@ int main (void)
 	printf("\t Testando a multiplicacao de matriz por vetor. \n");
 
 	printf("Uma matriz com \n [ 1 2 3 ] \n [ 4 5 6 ] \n [ 7 8 9 ] \n");
+	add_valor(1, 0, 1, &v1);
+	add_valor(1, 1, 2, &v1);
+	add_valor(1, 2, 3, &v1);
 	add_valor(1, 0, 4, &v1);
 	add_valor(1, 1, 5, &v1);
 	add_valor(1, 2, 6, &v1);
@@ -587,17 +768,23 @@ int main (void)
 	add_valor(2, 1, 8, &v1);
 	add_valor(2, 2, 9, &v1);
 
-	printf("Um vetor com [ 2 2 0] \n");
+	printf("Um vetor com \n");
+	printf(" [ 2 ] \n");
+	printf(" [ 2 ] \n");
+	printf(" [ 0 ] \n");
 	add_valor(0, 0, 2, &v2);
-	add_valor(0, 1, 2, &v2);
+	add_valor(1, 0, 2, &v2);
+	add_valor(2, 0, 0, &v2);
+	add_valor(0, 1, 0, &v2);
+	add_valor(1, 1, 0, &v2);
+	add_valor(2, 1, 0, &v2);
 	add_valor(0, 2, 0, &v2);
+	add_valor(1, 2, 0, &v2);
+	add_valor(2, 2, 0, &v2);
 
 	multiplicacao_matriz_vetor(&v1, &v2, &v3);
 
 	printf("Resultado = \n");
-	printf(" [ %f %f %f] \n", v3.i[0].j[0].valor, v3.i[0].j[1].valor, v3.i[0].j[2].valor);
-
-	printf("Ordem faz diferença no resultado = \n");
 	printf(" [ %f %f %f] \n [ %f %f %f] \n [ %f %f %f] \n", v3.i[0].j[0].valor, v3.i[0].j[1].valor, v3.i[0].j[2].valor, v3.i[1].j[0].valor, v3.i[1].j[1].valor, v3.i[1].j[2].valor, v3.i[2].j[0].valor, v3.i[2].j[1].valor, v3.i[2].j[2].valor);
 
 	printf("---------------------------------------------------\n");
@@ -631,5 +818,269 @@ int main (void)
 	printf("Resultado = \n");
 	printf(" [ %f %f %f ] \n", v2.i[0].j[0].valor, v2.i[0].j[1].valor, v2.i[0].j[2].valor);
 
+	printf("---------------------------------------------------\n");
+	printf("\t Testando produto escalar entre vetores. \n");
+
+	printf("Vetor com [ 1 2 0 ] \n");
+	add_valor(0, 0, 1, &v1);
+	add_valor(0, 1, 2, &v1);
+	add_valor(0, 2, 0, &v1);
+	add_valor(1, 0, 0, &v1);
+	add_valor(1, 1, 0, &v1);
+	add_valor(1, 2, 0, &v1);
+	add_valor(2, 0, 0, &v1);
+	add_valor(2, 1, 0, &v1);
+	add_valor(2, 2, 0, &v1);
+
+	printf("Um vetor com [ 2 2 3] \n");
+	add_valor(0, 0, 2, &v2);
+	add_valor(0, 1, 0, &v2);
+	add_valor(0, 2, 0, &v2);
+	add_valor(1, 0, 2, &v2);
+	add_valor(1, 1, 0, &v2);
+	add_valor(1, 2, 0, &v2);
+	add_valor(2, 0, 3, &v2);
+	add_valor(2, 1, 0, &v2);
+	add_valor(2, 2, 0, &v2);
+
+	add_valor(0, 0, 0, &v3);
+	add_valor(0, 1, 0, &v3);
+	add_valor(0, 2, 0, &v3);
+	add_valor(1, 0, 0, &v3);
+	add_valor(1, 1, 0, &v3);
+	add_valor(1, 2, 0, &v3);
+	add_valor(2, 0, 0, &v3);
+	add_valor(2, 1, 0, &v3);
+	add_valor(2, 2, 0, &v3);
+
+	multiplicacao_matriz_vetor(&v1, &v2, &v3);
+
+	printf("Resultado = \n");
+	printf(" [ %f ] \n", v3.i[0].j[0].valor);
+	
+	printf("---------------------------------------------------\n");
+	printf("\t Testando copia vetores. \n");
+
+	cria_linhas(3, &v1);
+	cria_linhas(3, &v2);
+
+	printf("Um vetor vai ser [ 1 2 3 ] \n [ 4 4 4 ] \n");
+	add_valor(0, 0, 1, &v1);
+	add_valor(0, 1, 2, &v1);
+	add_valor(0, 2, 3, &v1);
+	add_valor(1, 0, 4, &v1);
+	add_valor(1, 1, 4, &v1);
+	add_valor(1, 2, 4, &v1);
+
+	copia(&v1, &v2);
+
+	printf("Resultado = [ %f %f %f ] \n", v2.i[0].j[0].valor, v2.i[0].j[1].valor, v2.i[0].j[2].valor);
+	printf("Resultado = [ %f %f %f ] \n", v2.i[1].j[0].valor, v2.i[1].j[1].valor, v2.i[1].j[2].valor);
+
+	printf("---------------------------------------------------\n");
+	printf("\t Testando transposta. \n");
+
+	cria_linhas(3, &v1);
+	cria_linhas(3, &v2);
+
+	printf("Um vetor vai ser \n [ 1 2 3 ] \n [ 4 4 4 ] \n");
+	add_valor(0, 0, 1, &v1);
+	add_valor(0, 1, 2, &v1);
+	add_valor(0, 2, 3, &v1);
+	add_valor(1, 0, 4, &v1);
+	add_valor(1, 1, 4, &v1);
+	add_valor(1, 2, 4, &v1);
+
+	transposta(&v1, &v2);
+
+	printf("Resultado = [ %f %f %f ] \n", v2.i[0].j[0].valor, v2.i[0].j[1].valor, v2.i[0].j[2].valor);
+	printf("Resultado = [ %f %f %f ] \n", v2.i[1].j[0].valor, v2.i[1].j[1].valor, v2.i[1].j[2].valor);
+	printf("Resultado = [ %f %f %f ] \n", v2.i[2].j[0].valor, v2.i[2].j[1].valor, v2.i[2].j[2].valor);
+	
+	printf("---------------------------------------------------\n");
+	printf("\t Testando vetor vezes vetor. \n");
+
+	cria_linhas(3, &v1);
+	cria_linhas(3, &v2);
+
+	printf("Um vetor vai ser [ 1 2 3 ] \n");
+	add_valor(0, 0, 1, &v1);
+	add_valor(0, 1, 2, &v1);
+	add_valor(0, 2, 3, &v1);
+
+	printf("Outro vetor vai ser [ 2 2 2 ] \n");
+	add_valor(0, 0, 2, &v2);
+	add_valor(0, 1, 2, &v2);
+	add_valor(0, 2, 2, &v2);
+
+	printf("Resultado = %f \n", multiplicacao_vetor_vetor(&v1, &v2));
+
+	/********************************FIM DOS TESTES*************************/	
+	printf("---------------------------------------------------\n");
+	printf("\t Testando gradiente conjugado \n");
+
+	cria_linhas(3, &v1);
+	cria_linhas(3, &v2);
+	cria_linhas(3, &v3);
+
+	add_valor(0, 0, 1, &v1);
+	add_valor(0, 1, -1, &v1);
+	add_valor(0, 2, 0, &v1);
+	add_valor(1, 0, -1, &v1);
+	add_valor(1, 1, 2, &v1);
+	add_valor(1, 2, 1, &v1);
+	add_valor(2, 0, 0, &v1);
+	add_valor(2, 1, 1, &v1);
+	add_valor(2, 2, 2, &v1);
+
+	print(&v1);
+	printf("-------------A \n");
+
+	add_valor(0, 0, 0, &v2);
+	add_valor(0, 1, 2, &v2);
+	add_valor(0, 2, 3, &v2);
+
+	print(&v2);
+	printf("-------------b \n");
+
+	ConjugateGradient(v1.numero_de_linhas, &v1, &v2, &v3);
+
+	print(&v3);
+	printf("-------------final \n");
+
 	return 0;
+}
+
+
+void ConjugateGradient(int n, Matriz* A, Matriz* b, Matriz* x)
+{
+
+	int k;
+
+	double alfa, beta, alfaNum, alfaDen, betaNum;
+
+	Matriz d;
+	Matriz d1;   // proximo vetor d
+	Matriz r;
+	Matriz r1;   // proximo vetor r
+	Matriz x1;   // proximo vetor x
+	Matriz w;    // vetor que recebe Ax
+	Matriz w1;	  // vetor multiplica Adk
+	Matriz temp; // vetor temporario
+	Matriz temp2; // vetor temporario2
+	int iteracoes = 0;
+
+	cria_linhas(n, &d);  //Criando vetor d
+	cria_linhas(n, &d1); //Criando vetor d1
+	cria_linhas(n, &r); //Criando vetor r
+	cria_linhas(n, &r1); //Criando vetor r1
+	cria_linhas(n, &x1); //Criando vetor x1
+	cria_linhas(n, &w); //Criando vetor w
+	cria_linhas(n, &w1); //Criando vetor w1
+	cria_linhas(n, &temp); //Criando vetor temp
+	cria_linhas(n, &temp2); //Criando vetor temp
+
+
+	multiplicacao_matriz_vetor(A, x, &w); //multipica Ax, salva em w
+
+	print(&w);
+	printf("-------------w \n");
+
+	subtrai_vetores(b, &w, &temp2); //diminui b-w  --> b - Ax , salva em w
+
+	print(&temp2);
+	printf("-------------temp2 \n");
+	copia(&temp2, &w);
+	printf("-------------w \n");
+
+	copia(&w, &r); // copia r = w 
+
+	print(&r);
+	printf("-------------r \n");
+
+	copia(&r, &d); // copia d = r
+
+	print(&d);
+	printf("-------------d \n");
+	
+	for (k = 0; k < n; k++, iteracoes++)
+	{
+
+		if (r.i[0].numero_de_colunas == 0)
+			break;
+
+		alfaNum = multiplicacao_vetor_vetor(&r, &r); // rT*r ---> numerador de alfa
+
+		printf("%f \n", alfaNum);
+		printf("-------------AlfaNum \n");
+
+		transposta(&d, &temp2);
+		multiplicacao_matriz_vetor(A, &temp2, &w1); // Ad ---> matriz A * dk, denominador de alfa e salva no vetor w1
+		transposta(&w1, &temp2);
+		copia(&temp2, &w1);
+		filtro(&w1);
+
+		print(&w1);
+		printf("------------w1 \n");
+
+		alfaDen = multiplicacao_vetor_vetor(&d, &w1); // dkT * Adk --> multiplicao no denominador de alfa
+				
+		printf("%f \n", alfaDen);
+		printf("-------------alfaDen \n");
+
+		alfa = alfaNum / alfaDen; // calculo do alfa
+
+		printf("%f \n", alfa);
+		printf("-------------alfa \n");
+
+		// inicio do calculo de Xk+1
+
+		multiplicacao_escalar_vetor(alfa, &d, &temp); //alfa * d --> multiplica alfa pelo vetor d 
+
+		print(&temp);
+		printf("------------temp \n");
+
+		adicao_vetores(x, &temp, &x1); // Xk + alfaDk  ---> soma de vetores
+
+		print(&x1);
+		printf("-----------x1 \n");
+
+		multiplicacao_escalar_vetor(alfa, &w1, &temp); // alfa * Adk 
+
+		print(&temp);
+		printf("-----------temp \n");
+
+		subtrai_vetores(x, &temp, &r1); // Rk+1 = Rk - alfa*Adk
+
+		print(&r1);
+		printf("-----------r1 \n");
+
+		betaNum = multiplicacao_vetor_vetor(&r1, &r1); // Rk+1(transposto) * Rk+1
+
+		printf("%f \n", betaNum);
+		printf("-----------betaNum \n");
+
+		beta = betaNum / alfaNum; // denominador de Beta eh o mesmo numerador de alfa
+
+		printf("%f \n", beta);
+		printf("-----------beta \n");
+
+		multiplicacao_escalar_vetor(beta, &d, &temp); // beta * dk
+
+		print(&temp);
+		printf("-----------temp \n");
+
+		adicao_vetores(&r1, &temp, &d1); // Rk+1 + beta * dk 
+
+		print(&d1);
+		printf("-----------d1 \n");
+
+		copia(&r1, &r);
+		copia(&x1, x);
+		copia(&d1, &d);
+
+	}
+
+
+
 }

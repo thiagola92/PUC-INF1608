@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #define true 1
 #define false 0
@@ -180,6 +181,7 @@ void print(Matriz* x) {
 			printf("] \n");
 		}
 	}
+	printf("-----------------------------------------------\n");
 }
 
 void adicao_vetores(Matriz* v1, Matriz* v2, Matriz* v3) {
@@ -284,7 +286,7 @@ double multiplicacao_vetor_vetor(Matriz* v1, Matriz* v2) {
 	return 0;
 }
 
-void ConjugateGradient(int n, Matriz* A, Matriz* b, Matriz* x, double tol) {
+void ConjugateGradient(Matriz* A, Matriz* b, Matriz* x, double tol) {
 
 	int iteracoes = 0;
 
@@ -310,17 +312,17 @@ void ConjugateGradient(int n, Matriz* A, Matriz* b, Matriz* x, double tol) {
 	adicao_vetores(b, &menosAx, &r);
 	copia(&r, &d);
 
-	for (iteracoes = 1; iteracoes < n; iteracoes++) {
+	for (iteracoes = 1; iteracoes < A->numero_de_linhas; iteracoes++) {
 
 		// Se todos os numeros tiverem dentro da tolerancia
 		for (int i = 0; i < r.i[0].numero_de_colunas; i++) {
 			if (r.i[0].j[i].valor > tol) {
-				printf("%f \n", r.i[0].j[i].valor);
+				//printf("%f \n", r.i[0].j[i].valor);
 				break;
 			}
 
 			if (i + 1 == r.i[0].numero_de_colunas) {
-				printf("Gradiente Conjugado para uma matriz de tamanho %d, iteracoes: %d\n", n, iteracoes);
+				printf("Gradiente Conjugado \t iteracoes: %d \n\n\n", iteracoes);
 				return;
 			}
 		}
@@ -354,73 +356,172 @@ void ConjugateGradient(int n, Matriz* A, Matriz* b, Matriz* x, double tol) {
 		copia(&d1, &d);
 	}
 
-	printf("Gradiente Conjugado para uma matriz de tamanho %d, iteracoes: %d\n", n, iteracoes);
+	printf("Gradiente Conjugado \t iteracoes: %d \n\n\n", iteracoes);
 }
 
-/*
-int main(void) {
-	Matriz m1;
-	Matriz v1;
-	Matriz v2;
+void Jacobi(Matriz* A, Matriz* b, Matriz* x, double tol) {
+	int linha, coluna;
 
-	cria_matriz(3, &m1);
-	cria_matriz(3, &v1);
-	cria_matriz(3, &v2);
+	int iteracoes = 1;
 
-	add_valor(0, 0, 1, &m1);
-	add_valor(0, 1, -1, &m1);
-	add_valor(0, 2, 0, &m1);
-	add_valor(1, 0, -1, &m1);
-	add_valor(1, 1, 2, &m1);
-	add_valor(1, 2, 1, &m1);
-	add_valor(2, 0, 0, &m1);
-	add_valor(2, 1, 1, &m1);
-	add_valor(2, 2, 2, &m1);
+	Matriz invertidoD;
+	Matriz L;
+	Matriz U;
+	Matriz LU;
+	Matriz LUx;
+	Matriz menosLUx;
+	Matriz bmenosLUx;
+	Matriz x1;
+	Matriz menosx;
+	Matriz x1menosx;
 
-	add_valor(0, 0, 0, &v1);
-	add_valor(0, 1, 2, &v1);
-	add_valor(0, 2, 3, &v1);
+	double soma;
+	double normadois;
 
-	ConjugateGradient(m1.numero_de_linhas, &m1, &v1, &v2);
+	cria_matriz(A->numero_de_linhas, &invertidoD);
+	cria_matriz(A->numero_de_linhas, &L);
+	cria_matriz(A->numero_de_linhas, &U);
 
-	printf("-\n");
-	print(&v2);
+	for (linha = 0; linha < A->numero_de_linhas; linha++) {
+		for (coluna = 0; coluna < A->i[linha].numero_de_colunas; coluna++) {
+			if (linha == A->i[linha].j[coluna].numero_da_coluna)
+				add_valor(linha, A->i[linha].j[coluna].numero_da_coluna, 1 / A->i[linha].j[coluna].valor, &invertidoD);
+			else if (linha > A->i[linha].j[coluna].numero_da_coluna)
+				add_valor(linha, A->i[linha].j[coluna].numero_da_coluna, A->i[linha].j[coluna].valor, &L);
+			else if(linha < A->i[linha].j[coluna].numero_da_coluna)
+				add_valor(linha, A->i[linha].j[coluna].numero_da_coluna, A->i[linha].j[coluna].valor, &U);
+		}
+	}
 
+	// x k+1
+	adicao_vetores(&L, &U, &LU);
+	multiplicacao_matriz_vetor(&LU, x, &LUx);
+	multiplicacao_escalar_vetor(-1, &LUx, &menosLUx);
+	adicao_vetores(b, &menosLUx, &bmenosLUx);
+	multiplicacao_matriz_vetor(&invertidoD, &bmenosLUx, &x1);
 
-	return;
-}*/
+	// norma dois
+	multiplicacao_escalar_vetor(-1, x, &menosx);
+	adicao_vetores(&x1, &menosx, &x1menosx);
+	for (coluna = 0, soma = 0; coluna < x1menosx.i[0].numero_de_colunas; coluna++)
+		soma += pow(x1menosx.i[0].j[coluna].valor, 2.0);
+	normadois = pow(soma, 1.0 / 2.0);
 
-int GC(void) {
-	Matriz m1;
-	Matriz v1;
-	Matriz v2;
+	while (normadois > tol) {
+
+		copia(&x1, x);
+
+		//x k+1
+		multiplicacao_matriz_vetor(&LU, x, &LUx);
+		multiplicacao_escalar_vetor(-1, &LUx, &menosLUx);
+		adicao_vetores(b, &menosLUx, &bmenosLUx);
+		multiplicacao_matriz_vetor(&invertidoD, &bmenosLUx, &x1);
+
+		// norma dois
+		multiplicacao_escalar_vetor(-1, x, &menosx);
+		adicao_vetores(&x1, &menosx, &x1menosx);
+		for (coluna = 0, soma = 0; coluna < x1menosx.i[0].numero_de_colunas; coluna++)
+			soma += pow(x1menosx.i[0].j[coluna].valor, 2.0);
+		normadois = pow(soma, 1.0 / 2.0);
+
+		iteracoes++;
+	}
+
+	copia(&x1, x);
+
+	printf("Metodo de Jacobi \t iteracoes: %d \n\n\n", iteracoes);
+}
+
+void GaussSeidel(Matriz* A, Matriz* b, Matriz* x, double tol) {
+	int linha, coluna;
+
+	int iteracoes = 1;
+	int posicao_busca;
+
+	double D;
+	double xD;
+	double bD;
+
+	Matriz Atemp;
+	Matriz btemp;
+
+	copia(A, &Atemp);
+	copia(b, &btemp);
+
+	for (linha = 0; linha < Atemp.numero_de_linhas; linha++) {
+
+		posicao_busca = busca_binaria(linha, linha, A);
+		if (posicao_busca == -1)
+			continue;
+
+		// Diagonal
+		D = A->i[linha].j[posicao_busca].valor;
+
+		for (coluna = 0; coluna < A->i[linha].numero_de_colunas; coluna++) {
+
+			add_valor(linha, A->i[linha].j[coluna].numero_da_coluna, Atemp.i[linha].j[coluna].numero_da_coluna / D, &Atemp);
+
+		}
+
+	}
+
+	printf("GaussSeidel \t iteracoes: %d \n\n\n", iteracoes);
+
+}
+
+void main(void) {
+	Matriz A;
+	Matriz b;
+	Matriz x;
+
+	double tol = 0.00001;
 
 	int tamanho=0;
 	printf("Diga o tamanho da matriz: ");
 	scanf("%d", &tamanho);
+	printf("Tolerancia: %g\n\n", tol);
 
-	cria_matriz(tamanho, &m1);
-	cria_matriz(tamanho, &v1);
-	cria_matriz(tamanho, &v2);
+	
+	cria_matriz(tamanho, &A);
+	cria_matriz(tamanho, &b);
+	cria_matriz(tamanho, &x);
 
-	preecnher_matriz(&m1);
+	/*
+	add_valor(0, 0, 5, &b);
+	add_valor(0, 1, 5, &b);
+
+	add_valor(0, 0, 3, &A);
+	add_valor(0, 1, 1, &A);
+	add_valor(1, 0, 1, &A);
+	add_valor(1, 1, 2, &A);
+	*/
+	
+	preecnher_matriz(&A);
 
 	for (int i = 0; i < tamanho; i++)
-		add_valor(0, i, 1, &v2);
+		add_valor(0, i, 1, &x);
 
-	multiplicacao_matriz_vetor(&m1, &v2, &v1);
+	multiplicacao_matriz_vetor(&A, &x, &b);
 
 	for (int i = 0; i < tamanho; i++)
-		add_valor(0, i, 0, &v2);
+		add_valor(0, i, 0, &x);
+	
+	// A, b, x, tolerancia
+	ConjugateGradient(&A, &b, &x, tol);
+	
+	for (int i = 0; i < tamanho; i++)
+		add_valor(0, i, 0, &x);
+	
+	// A, b, x, tolerancia
+	Jacobi(&A, &b, &x, tol);
 
-	// numero de linha, A, b, x
-	ConjugateGradient(m1.numero_de_linhas, &m1, &v1, &v2, 0.0001);
+	for (int i = 0; i < tamanho; i++)
+		add_valor(0, i, 0, &x);
 
-	return;
-}
+	// A, b, x, tolerancia
+	//GaussSeidel(&A, &b, &x, tol);
 
-int main(void) {
-	GC();
+
 
 	return;
 }

@@ -153,6 +153,22 @@ void preecnher_matriz(Matriz* m) {
 	}
 }
 
+void preecnher_matriz_2(Matriz* m) {
+	int contador = 0;
+
+	for (contador = 0; contador < m->numero_de_linhas; contador++) {
+		add_valor(contador, contador, contador + 1, m);
+		add_valor(contador, contador + 1, 0.5, m);
+		add_valor(contador, contador + 2, 0.5, m);
+		add_valor(contador + 1, contador, 0.5, m);
+		add_valor(contador + 2, contador, 0.5, m);
+		if (contador < m->numero_de_linhas/2) {
+			add_valor(contador, (contador+1) * 2 - 1, 0.5, m);
+			add_valor((contador+1) * 2 - 1, contador, 0.5, m);
+		}
+	}
+}
+
 void copia(Matriz* m, Matriz* m2) {
 	int contador = 0;
 	int contador2 = 0;
@@ -214,6 +230,8 @@ void multiplicacao_matriz_vetor(Matriz* m, Matriz* v1, Matriz* v2) {
 
 	cria_matriz(m->numero_de_linhas, v2);
 	
+
+
 	for (contadorLinha = 0; contadorLinha < v1->numero_de_linhas; contadorLinha++) {
 		for (contadorColuna = 0; contadorColuna < v1->i[contadorLinha].numero_de_colunas; contadorColuna++)
 			add_valor(v1->i[contadorLinha].j[contadorColuna].numero_da_coluna, contadorLinha, v1->i[contadorLinha].j[contadorColuna].valor, v2);
@@ -244,6 +262,7 @@ void multiplicacao_matriz_vetor(Matriz* m, Matriz* v1, Matriz* v2) {
 				soma = soma + (m->i[contadorLinha].j[pos_da_busca_1].valor * temp.i[contador].j[pos_da_busca_2].valor);
 				add_valor(contadorLinha, contadorColuna, soma, v2);
 			}
+
 		}
 	}
 
@@ -465,10 +484,21 @@ void GaussSeidel(Matriz* A, Matriz* b, Matriz* x, double tol) {
 				continue;
 			D = Atemp.i[linha].j[posicao_busca].valor;
 
-			for (coluna = 0; coluna < Atemp.i[linha].numero_de_colunas; coluna++) {
+			for (coluna = 0, somatorio = 0; coluna < Atemp.i[linha].numero_de_colunas; coluna++) {
 
 				// Dividir essa linha por D
 				add_valor(linha, Atemp.i[linha].j[coluna].numero_da_coluna, Atemp.i[linha].j[coluna].valor / D, &Atemp);
+
+
+
+
+				if (linha != Atemp.i[linha].j[coluna].numero_da_coluna) {
+
+					posicao_busca = busca_binaria(0, Atemp.i[linha].j[coluna].numero_da_coluna, x);
+					if (posicao_busca != -1)
+						somatorio += Atemp.i[linha].j[coluna].valor * (x->i[0].j[posicao_busca].valor *-1);
+
+				}
 
 			}
 
@@ -476,10 +506,17 @@ void GaussSeidel(Matriz* A, Matriz* b, Matriz* x, double tol) {
 			posicao_busca = busca_binaria(0, linha, &btemp);
 			if (posicao_busca != -1)
 				add_valor(0, linha, btemp.i[0].j[posicao_busca].valor / D, &btemp);
+
+
+			posicao_busca = busca_binaria(0, linha, &btemp);
+			if (posicao_busca != -1)
+				somatorio += btemp.i[0].j[posicao_busca].valor;
+
+			add_valor(0, linha, somatorio, x);
 		}
 
 
-
+		/*
 		for (linha = 0; linha < Atemp.numero_de_linhas; linha++) {
 
 			for (coluna = 0, somatorio = 0; coluna < Atemp.i[linha].numero_de_colunas; coluna++) {
@@ -487,7 +524,7 @@ void GaussSeidel(Matriz* A, Matriz* b, Matriz* x, double tol) {
 				if (linha != Atemp.i[linha].j[coluna].numero_da_coluna) {
 
 					posicao_busca = busca_binaria(0, Atemp.i[linha].j[coluna].numero_da_coluna, x);
-					if (posicao_busca != -1) 
+					if (posicao_busca != -1)
 						somatorio += Atemp.i[linha].j[coluna].valor * (x->i[0].j[posicao_busca].valor *-1);
 
 				}
@@ -499,7 +536,7 @@ void GaussSeidel(Matriz* A, Matriz* b, Matriz* x, double tol) {
 
 			add_valor(0, linha, somatorio, x);
 
-		}
+		}*/
 
 		// norma dois
 		multiplicacao_escalar_vetor(-1, &xtemp, &menosxtemp);
@@ -543,32 +580,29 @@ void main(void) {
 	add_valor(1, 0, 1, &A);
 	add_valor(1, 1, 2, &A);
 	*/
-	
-	preecnher_matriz(&A);
 
+	// Importante para descobrir b
 	for (int i = 0; i < tamanho; i++)
 		add_valor(0, i, 1, &x);
 
+	preecnher_matriz(&A);
+
+	//preecnher_matriz_2(&A);
+
 	multiplicacao_matriz_vetor(&A, &x, &b);
 
+	// Importante pois você quer x zerado
 	for (int i = 0; i < tamanho; i++)
 		add_valor(0, i, 0, &x);
-	
-	// A, b, x, tolerancia
-	ConjugateGradient(&A, &b, &x, tol);
-	
-	for (int i = 0; i < tamanho; i++)
-		add_valor(0, i, 0, &x);
-	
-	// A, b, x, tolerancia
-	Jacobi(&A, &b, &x, tol);
 
-	for (int i = 0; i < tamanho; i++)
-		add_valor(0, i, 0, &x);
+	// A, b, x, tolerancia
+	//ConjugateGradient(&A, &b, &x, tol);
+	
+	// A, b, x, tolerancia
+	//Jacobi(&A, &b, &x, tol);
 
 	// A, b, x, tolerancia
 	GaussSeidel(&A, &b, &x, tol);
-
 
 	return;
 }

@@ -439,31 +439,79 @@ void GaussSeidel(Matriz* A, Matriz* b, Matriz* x, double tol) {
 	int posicao_busca;
 
 	double D;
-	double xD;
-	double bD;
+	double somatorio = 0;
 
 	Matriz Atemp;
 	Matriz btemp;
+	Matriz xtemp;
+	Matriz menosxtemp;
+	Matriz xmenosxtemp;
 
+	double normadois;
+
+	// Não quero mexer no b e A diretamente
 	copia(A, &Atemp);
 	copia(b, &btemp);
+	copia(x, &xtemp);
 
-	for (linha = 0; linha < Atemp.numero_de_linhas; linha++) {
 
-		posicao_busca = busca_binaria(linha, linha, A);
-		if (posicao_busca == -1)
-			continue;
+	do {
 
-		// Diagonal
-		D = A->i[linha].j[posicao_busca].valor;
+		for (linha = 0; linha < Atemp.numero_de_linhas; linha++) {
 
-		for (coluna = 0; coluna < A->i[linha].numero_de_colunas; coluna++) {
+			// Pegando a Diagonal
+			posicao_busca = busca_binaria(linha, linha, &Atemp);
+			if (posicao_busca == -1)
+				continue;
+			D = Atemp.i[linha].j[posicao_busca].valor;
 
-			add_valor(linha, A->i[linha].j[coluna].numero_da_coluna, Atemp.i[linha].j[coluna].numero_da_coluna / D, &Atemp);
+			for (coluna = 0; coluna < Atemp.i[linha].numero_de_colunas; coluna++) {
+
+				// Dividir essa linha por D
+				add_valor(linha, Atemp.i[linha].j[coluna].numero_da_coluna, Atemp.i[linha].j[coluna].valor / D, &Atemp);
+
+			}
+
+			// Dividir b por D
+			posicao_busca = busca_binaria(0, linha, &btemp);
+			if (posicao_busca != -1)
+				add_valor(0, linha, btemp.i[0].j[posicao_busca].valor / D, &btemp);
+		}
+
+
+
+		for (linha = 0; linha < Atemp.numero_de_linhas; linha++) {
+
+			for (coluna = 0, somatorio = 0; coluna < Atemp.i[linha].numero_de_colunas; coluna++) {
+
+				if (linha != Atemp.i[linha].j[coluna].numero_da_coluna) {
+
+					posicao_busca = busca_binaria(0, Atemp.i[linha].j[coluna].numero_da_coluna, x);
+					if (posicao_busca != -1) 
+						somatorio += Atemp.i[linha].j[coluna].valor * (x->i[0].j[posicao_busca].valor *-1);
+
+				}
+			}
+
+			posicao_busca = busca_binaria(0, linha, &btemp);
+			if (posicao_busca != -1)
+				somatorio += btemp.i[0].j[posicao_busca].valor;
+
+			add_valor(0, linha, somatorio, x);
 
 		}
 
-	}
+		// norma dois
+		multiplicacao_escalar_vetor(-1, &xtemp, &menosxtemp);
+		adicao_vetores(x, &menosxtemp, &xmenosxtemp);
+		for (coluna = 0, somatorio = 0; coluna < xmenosxtemp.i[0].numero_de_colunas; coluna++)
+			somatorio += pow(xmenosxtemp.i[0].j[coluna].valor, 2.0);
+		normadois = pow(somatorio, 1.0 / 2.0);
+
+		copia(x, &xtemp);
+		iteracoes++;
+
+	} while (normadois > tol);
 
 	printf("GaussSeidel \t iteracoes: %d \n\n\n", iteracoes);
 
@@ -474,7 +522,7 @@ void main(void) {
 	Matriz b;
 	Matriz x;
 
-	double tol = 0.00001;
+	double tol = 0.0000001;
 
 	int tamanho=0;
 	printf("Diga o tamanho da matriz: ");
@@ -519,8 +567,7 @@ void main(void) {
 		add_valor(0, i, 0, &x);
 
 	// A, b, x, tolerancia
-	//GaussSeidel(&A, &b, &x, tol);
-
+	GaussSeidel(&A, &b, &x, tol);
 
 
 	return;

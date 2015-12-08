@@ -559,11 +559,10 @@ void main(void) {
 	Matriz b;
 	Matriz x;
 
-	double tol = 0.0000001;
+	double tol = 0.00001;
 
-	int tamanho=0;
-	printf("Diga o tamanho da matriz: ");
-	scanf("%d", &tamanho);
+	int tamanho=200;
+	printf("Tamanho da matriz: %d\n", tamanho);
 	printf("Tolerancia: %g\n\n", tol);
 
 	
@@ -571,23 +570,13 @@ void main(void) {
 	cria_matriz(tamanho, &b);
 	cria_matriz(tamanho, &x);
 
-	/*
-	add_valor(0, 0, 5, &b);
-	add_valor(0, 1, 5, &b);
-
-	add_valor(0, 0, 3, &A);
-	add_valor(0, 1, 1, &A);
-	add_valor(1, 0, 1, &A);
-	add_valor(1, 1, 2, &A);
-	*/
-
 	// Importante para descobrir b
 	for (int i = 0; i < tamanho; i++)
 		add_valor(0, i, 1, &x);
 
-	preecnher_matriz(&A);
+	//preecnher_matriz(&A);
 
-	//preecnher_matriz_2(&A);
+	preecnher_matriz_2(&A);
 
 	multiplicacao_matriz_vetor(&A, &x, &b);
 
@@ -596,10 +585,16 @@ void main(void) {
 		add_valor(0, i, 0, &x);
 
 	// A, b, x, tolerancia
-	//ConjugateGradient(&A, &b, &x, tol);
+	ConjugateGradient(&A, &b, &x, tol);
+
+	for (int i = 0; i < tamanho; i++)
+		add_valor(0, i, 0, &x);
 	
 	// A, b, x, tolerancia
-	//Jacobi(&A, &b, &x, tol);
+	Jacobi(&A, &b, &x, tol);
+
+	for (int i = 0; i < tamanho; i++)
+		add_valor(0, i, 0, &x);
 
 	// A, b, x, tolerancia
 	GaussSeidel(&A, &b, &x, tol);

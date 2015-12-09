@@ -384,8 +384,6 @@ void Jacobi(Matriz* A, Matriz* b, Matriz* x, double tol) {
 	int iteracoes = 1;
 
 	Matriz invertidoD;
-	Matriz L;
-	Matriz U;
 	Matriz LU;
 	Matriz LUx;
 	Matriz menosLUx;
@@ -398,22 +396,20 @@ void Jacobi(Matriz* A, Matriz* b, Matriz* x, double tol) {
 	double normadois;
 
 	cria_matriz(A->numero_de_linhas, &invertidoD);
-	cria_matriz(A->numero_de_linhas, &L);
-	cria_matriz(A->numero_de_linhas, &U);
+	cria_matriz(A->numero_de_linhas, &LU);
 
 	for (linha = 0; linha < A->numero_de_linhas; linha++) {
 		for (coluna = 0; coluna < A->i[linha].numero_de_colunas; coluna++) {
 			if (linha == A->i[linha].j[coluna].numero_da_coluna)
 				add_valor(linha, A->i[linha].j[coluna].numero_da_coluna, 1 / A->i[linha].j[coluna].valor, &invertidoD);
 			else if (linha > A->i[linha].j[coluna].numero_da_coluna)
-				add_valor(linha, A->i[linha].j[coluna].numero_da_coluna, A->i[linha].j[coluna].valor, &L);
+				add_valor(linha, A->i[linha].j[coluna].numero_da_coluna, A->i[linha].j[coluna].valor, &LU);
 			else if(linha < A->i[linha].j[coluna].numero_da_coluna)
-				add_valor(linha, A->i[linha].j[coluna].numero_da_coluna, A->i[linha].j[coluna].valor, &U);
+				add_valor(linha, A->i[linha].j[coluna].numero_da_coluna, A->i[linha].j[coluna].valor, &LU);
 		}
 	}
 
 	// x k+1
-	adicao_vetores(&L, &U, &LU);
 	multiplicacao_matriz_vetor(&LU, x, &LUx);
 	multiplicacao_escalar_vetor(-1, &LUx, &menosLUx);
 	adicao_vetores(b, &menosLUx, &bmenosLUx);
@@ -515,29 +511,6 @@ void GaussSeidel(Matriz* A, Matriz* b, Matriz* x, double tol) {
 			add_valor(0, linha, somatorio, x);
 		}
 
-
-		/*
-		for (linha = 0; linha < Atemp.numero_de_linhas; linha++) {
-
-			for (coluna = 0, somatorio = 0; coluna < Atemp.i[linha].numero_de_colunas; coluna++) {
-
-				if (linha != Atemp.i[linha].j[coluna].numero_da_coluna) {
-
-					posicao_busca = busca_binaria(0, Atemp.i[linha].j[coluna].numero_da_coluna, x);
-					if (posicao_busca != -1)
-						somatorio += Atemp.i[linha].j[coluna].valor * (x->i[0].j[posicao_busca].valor *-1);
-
-				}
-			}
-
-			posicao_busca = busca_binaria(0, linha, &btemp);
-			if (posicao_busca != -1)
-				somatorio += btemp.i[0].j[posicao_busca].valor;
-
-			add_valor(0, linha, somatorio, x);
-
-		}*/
-
 		// norma dois
 		multiplicacao_escalar_vetor(-1, &xtemp, &menosxtemp);
 		adicao_vetores(x, &menosxtemp, &xmenosxtemp);
@@ -554,6 +527,85 @@ void GaussSeidel(Matriz* A, Matriz* b, Matriz* x, double tol) {
 
 }
 
+void SOR(Matriz* A, Matriz* b, Matriz* x, double tol, double w) {
+	int linha, coluna;
+
+	int iteracoes = 1;
+	int posicao_busca;
+
+	double D;
+	double somatorio = 0;
+
+	Matriz Atemp;
+	Matriz btemp;
+	Matriz xtemp;
+	Matriz menosxtemp;
+	Matriz xmenosxtemp;
+
+	double normadois;
+
+	// Não quero mexer no b e A diretamente
+	copia(A, &Atemp);
+	copia(b, &btemp);
+	copia(x, &xtemp);
+
+
+	do {
+
+		for (linha = 0; linha < Atemp.numero_de_linhas; linha++) {
+
+			// Pegando a Diagonal
+			posicao_busca = busca_binaria(linha, linha, &Atemp);
+			if (posicao_busca == -1)
+				continue;
+			D = Atemp.i[linha].j[posicao_busca].valor;
+
+			for (coluna = 0, somatorio = 0; coluna < Atemp.i[linha].numero_de_colunas; coluna++) {
+
+				// Dividir essa linha por D
+				add_valor(linha, Atemp.i[linha].j[coluna].numero_da_coluna, Atemp.i[linha].j[coluna].valor / D, &Atemp);
+
+
+				if (linha != Atemp.i[linha].j[coluna].numero_da_coluna) {
+
+					posicao_busca = busca_binaria(0, Atemp.i[linha].j[coluna].numero_da_coluna, x);
+					if (posicao_busca != -1)
+						somatorio += Atemp.i[linha].j[coluna].valor * (x->i[0].j[posicao_busca].valor *-1);
+
+				}
+
+			}
+
+			// Dividir b por D
+			posicao_busca = busca_binaria(0, linha, &btemp);
+			if (posicao_busca != -1) {
+				add_valor(0, linha, btemp.i[0].j[posicao_busca].valor / D, &btemp);
+				somatorio += btemp.i[0].j[posicao_busca].valor;
+			}
+
+			posicao_busca = busca_binaria(0, linha, x);
+			if (posicao_busca != -1)
+				add_valor(0, linha, (1-w) * (x->i[0].j[posicao_busca].valor) + (w*somatorio), x);
+			else
+				add_valor(0, linha, (w*somatorio), x);
+		}
+
+		// norma dois
+		multiplicacao_escalar_vetor(-1, &xtemp, &menosxtemp);
+		adicao_vetores(x, &menosxtemp, &xmenosxtemp);
+		for (coluna = 0, somatorio = 0; coluna < xmenosxtemp.i[0].numero_de_colunas; coluna++)
+			somatorio += pow(xmenosxtemp.i[0].j[coluna].valor, 2.0);
+		normadois = pow(somatorio, 1.0 / 2.0);
+
+		copia(x, &xtemp);
+		iteracoes++;
+
+	} while (normadois > tol);
+
+	printf("SOR \t iteracoes: %d \n\n\n", iteracoes);
+
+}
+
 void main(void) {
 	Matriz A;
 	Matriz b;
@@ -561,7 +613,7 @@ void main(void) {
 
 	double tol = 0.00001;
 
-	int tamanho=200;
+	int tamanho=100;
 	printf("Tamanho da matriz: %d\n", tamanho);
 	printf("Tolerancia: %g\n\n", tol);
 
@@ -574,9 +626,9 @@ void main(void) {
 	for (int i = 0; i < tamanho; i++)
 		add_valor(0, i, 1, &x);
 
-	//preecnher_matriz(&A);
+	preecnher_matriz(&A);
 
-	preecnher_matriz_2(&A);
+	//preecnher_matriz_2(&A);
 
 	multiplicacao_matriz_vetor(&A, &x, &b);
 
@@ -587,17 +639,31 @@ void main(void) {
 	// A, b, x, tolerancia
 	ConjugateGradient(&A, &b, &x, tol);
 
+	print(&x);
+
 	for (int i = 0; i < tamanho; i++)
 		add_valor(0, i, 0, &x);
 	
 	// A, b, x, tolerancia
 	Jacobi(&A, &b, &x, tol);
 
+	print(&x);
+
 	for (int i = 0; i < tamanho; i++)
 		add_valor(0, i, 0, &x);
 
 	// A, b, x, tolerancia
 	GaussSeidel(&A, &b, &x, tol);
+
+	print(&x);
+
+	for (int i = 0; i < tamanho; i++)
+		add_valor(0, i, 0, &x);
+
+	// A, b, x, tolerancia
+	SOR(&A, &b, &x, tol, 1.1);
+
+	print(&x);
 
 	return;
 }

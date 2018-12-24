@@ -1,3 +1,5 @@
+![WARNING](WARNING.png)
+
 # ResolucaoSistemasEsparsos
 Trabalho de Análise Numérica
 
